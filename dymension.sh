@@ -47,7 +47,7 @@ fi
 if [ ! $WALLET ]; then
 	echo "export WALLET=wallet" >> $HOME/.bash_profile
 fi
-echo "export DYMENSION_CHAIN_ID=35-C" >> $HOME/.bash_profile
+echo "export DYMENSION_CHAIN_ID=froopyland_100-1" >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
 # update
@@ -58,18 +58,22 @@ sudo apt install curl build-essential git wget jq make gcc tmux chrony -y
 
 # install go
 if ! [ -x "$(command -v go)" ]; then
-sudo rm -rf /usr/local/go
-curl -Ls https://go.dev/dl/go1.19.7.linux-amd64.tar.gz | sudo tar -xzf - -C /usr/local
-eval $(echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/golang.sh)
-eval $(echo 'export PATH=$PATH:$HOME/go/bin' | tee -a $HOME/.profile)
+ver="1.20.5" && \
+wget "https://golang.org/dl/go$ver.linux-amd64.tar.gz" && \
+sudo rm -rf /usr/local/go && \
+sudo tar -C /usr/local -xzf "go$ver.linux-amd64.tar.gz" && \
+rm "go$ver.linux-amd64.tar.gz" && \
+echo "export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin" >> $HOME/.bash_profile && \
+source $HOME/.bash_profile && \
+go version
 fi
 
 # download binary
 cd $HOME
 rm -rf dymension
-git clone https://github.com/dymensionxyz/dymension.git
+git clone https://github.com/dymensionxyz/dymension
 cd dymension
-git checkout v0.2.0-beta
+git checkout v1.0.2-beta
 make install
 
 # config
@@ -80,15 +84,15 @@ dymd config keyring-backend test
 dymd init $NODENAME --chain-id $DYMENSION_CHAIN_ID
 
 # download genesis and addrbook
-curl -s https://raw.githubusercontent.com/dymensionxyz/testnets/main/dymension-hub/35-C/genesis.json > $HOME/.dymension/config/genesis.json
-curl -s https://snapshots2-testnet.nodejumper.io/dymension-testnet/addrbook.json > $HOME/.dymension/config/addrbook.json
+wget -O $HOME/.dymension/config/genesis.json "https://raw.githubusercontent.com/dymensionxyz/testnets/main/dymension-hub/froopyland/genesis.json"
+wget -O $HOME/.dymension/config/addrbook.json "https://share101.utsa.tech/dymension/addrbook.json"
 
 # set minimum gas price
-sed -i -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0.0001udym\"/" $HOME/.dymension/config/app.toml
+sed -i.bak -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0.025udym\"/;" $HOME/.dymension/config/app.toml
 
 # set peers and seeds
-SEEDS="f97a75fb69d3a5fe893dca7c8d238ccc0bd66a8f@dymension-testnet.seed.brocha.in:30584,ebc272824924ea1a27ea3183dd0b9ba713494f83@dymension-testnet-seed.autostake.net:27086,b78dd0e25e28ec0b43412205f7c6780be8775b43@dym.seed.takeshi.team:10356,babc3f3f7804933265ec9c40ad94f4da8e9e0017@testnet-seed.rhinostake.com:20556,c6cdcc7f8e1a33f864956a8201c304741411f219@3.214.163.125:26656"
-PEERS="76fb074cb54791afa399979ca863da211404bad6@dymension-testnet.nodejumper.io:27656,7fc44e2651006fb2ddb4a56132e738da2845715f@65.108.6.45:61256,8f84d324a2d266e612d06db4a793b0d001ee62a0@38.146.3.200:20556,6204710a0d089566b6df85ae4aee595afdd23cbb@146.190.40.115:26656,e374d21e689d4e1832ef72e0dae2a9bca435ba36@95.217.114.220:46656,f2d185a19f27e8290163d63a28846601662b50f1@138.201.204.5:40656,6cf94ed068c7401ba8e6f9a49143fd90df415e83@195.201.237.198:46656,54160abe97cd71abb3a83516fd8e4a47cb509fba@188.34.178.103:46656,4d2ec1e61d61550fc5bfacc57e971ff9b6181152@135.181.180.29:26656,47921c153041fb2f048c1e174b6d02ac0efab7a9@38.242.207.16:26656,015c628c6975befaaec912a88f19c0566f37173e@95.217.133.45:46656"
+SEEDS="ade4d8bc8cbe014af6ebdf3cb7b1e9ad36f412c0@testnet-seeds.polkachu.com:20556"
+PEERS="e7857b8ed09bd0101af72e30425555efa8f4a242@148.251.177.108:20556,3410e9bc9c429d6f35e868840f6b7a0ccb29020b@46.4.5.45:20556,138009ae8a3435eab5df2d58844239077c83c92a@161.97.180.20:16657,f85a4dd43cc31b2ef7363667fcfcf2c5cd25ef04@dymension.peers.stavr.tech:17086"
 sed -i -e "s/^seeds *=.*/seeds = \"$SEEDS\"/; s/^persistent_peers *=.*/persistent_peers = \"$PEERS\"/" $HOME/.dymension/config/config.toml
 
 # disable indexing
@@ -125,7 +129,7 @@ WantedBy=multi-user.target
 EOF
 
 dymd tendermint unsafe-reset-all --home $HOME/.dymension --keep-addr-book 
-curl https://snapshots2-testnet.nodejumper.io/dymension-testnet/35-C_2023-05-13.tar.lz4 | lz4 -dc - | tar -xf - -C $HOME/.dymension
+#curl https://snapshots2-testnet.nodejumper.io/dymension-testnet/35-C_2023-05-13.tar.lz4 | lz4 -dc - | tar -xf - -C $HOME/.dymension
 
 # start service
 sudo systemctl daemon-reload
@@ -154,12 +158,12 @@ dymd tx staking create-validator \
 --amount=1000000udym \
 --pubkey=$(dymd tendermint show-validator) \
 --moniker="$NODENAME" \
---chain-id=35-C \
+--chain-id=froopyland_100-1 \
 --commission-rate=0.1 \
 --commission-max-rate=0.2 \
 --commission-max-change-rate=0.05 \
 --min-self-delegation=1 \
---fees=1000udym \
+--fees=7500udym \
 --from=wallet \
 -y
   
