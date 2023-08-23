@@ -15,7 +15,7 @@ Explorer:
  - 8GB RAM
  - 100GB of storage (SSD or NVME)
 
-## Set up your nibiru fullnode
+## Set up your dymension fullnode
 ```
 wget https://raw.githubusercontent.com/freshe4qa/dymension_/main/dymension.sh && chmod +x dymension.sh && ./dymension.sh
 ```
