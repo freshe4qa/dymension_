@@ -128,7 +128,7 @@ WantedBy=multi-user.target
 EOF
 
 dymd tendermint unsafe-reset-all --home $HOME/.dymension --keep-addr-book 
-curl https://snapshots-testnet.nodejumper.io/dymension-testnet/snapshot_latest.tar.lz4 | lz4 -dc - | tar -xf - -C $HOME/.dymension
+curl https://snapshots-testnet.nodejumper.io/dymension-testnet/dymension-testnet_latest.tar.lz4 | lz4 -dc - | tar -xf - -C $HOME/.dymension
 
 # start service
 sudo systemctl daemon-reload
