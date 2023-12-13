@@ -72,7 +72,7 @@ cd $HOME
 rm -rf dymension
 git clone https://github.com/dymensionxyz/dymension
 cd dymension
-git checkout v1.0.2-beta
+git checkout v2.0.0-alpha.7
 make install
 
 # config
@@ -83,15 +83,15 @@ dymd config keyring-backend test
 dymd init $NODENAME --chain-id $DYMENSION_CHAIN_ID
 
 # download genesis and addrbook
-wget -O $HOME/.dymension/config/genesis.json "https://raw.githubusercontent.com/dymensionxyz/testnets/main/dymension-hub/froopyland/genesis.json"
-wget -O $HOME/.dymension/config/addrbook.json "https://share101.utsa.tech/dymension/addrbook.json"
+curl -s https://raw.githubusercontent.com/dymensionxyz/testnets/main/dymension-hub/froopyland/genesis.json > $HOME/.dymension/config/genesis.json
+curl -s https://snapshots-testnet.nodejumper.io/dymension-testnet/addrbook.json > $HOME/.dymension/config/addrbook.json
 
 # set minimum gas price
 sed -i.bak -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0.025udym\"/;" $HOME/.dymension/config/app.toml
 
 # set peers and seeds
 SEEDS="ade4d8bc8cbe014af6ebdf3cb7b1e9ad36f412c0@testnet-seeds.polkachu.com:20556"
-PEERS="e7857b8ed09bd0101af72e30425555efa8f4a242@148.251.177.108:20556,3410e9bc9c429d6f35e868840f6b7a0ccb29020b@46.4.5.45:20556,138009ae8a3435eab5df2d58844239077c83c92a@161.97.180.20:16657,f85a4dd43cc31b2ef7363667fcfcf2c5cd25ef04@dymension.peers.stavr.tech:17086"
+PEERS="4eac723e37c4a4c8c89b9540b7112007ec2aa2ad@95.217.119.56:36656,7a08dfb7596b53271dc4d04379e136f6b15ca8ee@84.203.117.234:26690"
 sed -i -e "s/^seeds *=.*/seeds = \"$SEEDS\"/; s/^persistent_peers *=.*/persistent_peers = \"$PEERS\"/" $HOME/.dymension/config/config.toml
 
 # disable indexing
@@ -128,7 +128,8 @@ WantedBy=multi-user.target
 EOF
 
 dymd tendermint unsafe-reset-all --home $HOME/.dymension --keep-addr-book 
-curl https://snapshots-testnet.nodejumper.io/dymension-testnet/dymension-testnet_latest.tar.lz4 | lz4 -dc - | tar -xf - -C $HOME/.dymension
+wget -O dymension_1653000.tar.lz4 https://snapshots.brocha.in/dymension/dymension_1653000.tar.lz4 --inet4-only
+lz4 -c -d dymension_1653000.tar.lz4  | tar -x -C $HOME/.dymension
 
 # start service
 sudo systemctl daemon-reload
